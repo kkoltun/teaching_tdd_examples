@@ -1,0 +1,1 @@
+W tym folderze umieszcza sie rozne zasoby uzywane w testach.
