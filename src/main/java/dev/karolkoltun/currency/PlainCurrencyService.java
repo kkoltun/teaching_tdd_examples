@@ -1,6 +1,7 @@
 package dev.karolkoltun.currency;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 import static dev.karolkoltun.currency.Currency.EUR;
 import static dev.karolkoltun.currency.Currency.PLN;
@@ -18,7 +19,7 @@ public class PlainCurrencyService implements CurrencyService {
     }
 
     if (from.equals(PLN) && to.equals(EUR)) {
-      return amount.divide(valueOf(PLN_TO_EUR_RATE));
+      return amount.divide(valueOf(PLN_TO_EUR_RATE), RoundingMode.HALF_EVEN);
     } else if (from.equals(EUR) && to.equals(PLN)) {
       return amount.multiply(valueOf(PLN_TO_EUR_RATE, 1));
     } else {
