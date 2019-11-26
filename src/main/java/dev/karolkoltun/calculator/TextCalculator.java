@@ -1,5 +1,9 @@
 package dev.karolkoltun.calculator;
 
+import org.apache.commons.lang3.math.NumberUtils;
+
+import java.util.Map;
+
 /** Proste, ryzykowne, lekko bledne i ograniczone podejscie do kalkulatora bazujacego na tekscie. */
 class TextCalculator {
 
@@ -11,16 +15,31 @@ class TextCalculator {
    * @return wynik
    */
   double calculate(String phrase) {
+
     int firstNumber = Character.getNumericValue(phrase.charAt(0));
-
-    char symbol = phrase.charAt(1);
-
-    if (symbol != '+') {
-      throw new RuntimeException("Symbol " + symbol + " is not supported!");
+    for (int i = 1; i < phrase.length(); i++) {
+      String subPhrase = phrase.substring(0, i);
+      if (!isNumber(subPhrase)) {
+        firstNumber = Integer.parseInt(subPhrase);
+      }
     }
 
-    int secondNumber = Character.getNumericValue(phrase.charAt(2));
+      char symbol = phrase.charAt(1);
 
-    return firstNumber + secondNumber;
+      int secondNumber = Character.getNumericValue(phrase.charAt(2));
+
+      if (symbol == '+') {
+        return firstNumber + secondNumber;
+      } else if (symbol == '-') {
+        return firstNumber - secondNumber;
+      } else {
+        throw new RuntimeException("Symbol " + symbol + " is not supported!");
+      }
+    }
+
+    boolean isNumber (String text){
+      return NumberUtils.isCreatable(text);
+    }
+
   }
-}
+
