@@ -2,7 +2,11 @@ package dev.karolkoltun.calculator;
 
 import org.apache.commons.lang3.math.NumberUtils;
 
-import java.util.Map;
+import java.text.DecimalFormat;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 /** Proste, ryzykowne, lekko bledne i ograniczone podejscie do kalkulatora bazujacego na tekscie. */
 class TextCalculator {
@@ -16,30 +20,36 @@ class TextCalculator {
    */
   double calculate(String phrase) {
 
-    int firstNumber = Character.getNumericValue(phrase.charAt(0));
-    for (int i = 1; i < phrase.length(); i++) {
-      String subPhrase = phrase.substring(0, i);
-      if (!isNumber(subPhrase)) {
-        firstNumber = Integer.parseInt(subPhrase);
-      }
+    String phraseWithoutSpaces = phrase.replaceAll(" ", "");
+    int index = phraseWithoutSpaces.length();
+
+    while (!isNumber(phraseWithoutSpaces.substring(0, index))) {
+      index--;
     }
 
-      char symbol = phrase.charAt(1);
+    String firstPhrase = phraseWithoutSpaces.substring(0, index);
+    String secondPhrase = phraseWithoutSpaces.substring(index + 1);
+    double firstNumber = Double.parseDouble(firstPhrase);
+    double secondNumber = Double.parseDouble(secondPhrase);
+    char symbol = phraseWithoutSpaces.charAt(index);
 
-      int secondNumber = Character.getNumericValue(phrase.charAt(2));
-
-      if (symbol == '+') {
+    switch (symbol) {
+      case '+':
         return firstNumber + secondNumber;
-      } else if (symbol == '-') {
+      case '-':
         return firstNumber - secondNumber;
-      } else {
+      case '*':
+        return firstNumber * secondNumber;
+      case '/':
+        return firstNumber / secondNumber;
+      default:
         throw new RuntimeException("Symbol " + symbol + " is not supported!");
-      }
     }
+  }
 
     boolean isNumber (String text){
       return NumberUtils.isCreatable(text);
     }
 
-  }
+}
 

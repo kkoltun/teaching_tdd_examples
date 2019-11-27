@@ -5,6 +5,7 @@ import dev.karolkoltun.currency.CurrencyService;
 import org.apache.commons.lang3.builder.ToStringExclude;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -50,10 +51,9 @@ class HomeFinancesService {
         return new ArrayList<>(expenses);
     }
 
-    List<Expense> getExpensesFromCategorySorted(Category category) {
+    List<Expense> getExpensesFromCategory(Category category) {
         return expenses.stream()
                 .filter(expense -> expense.getCategory().equals(category))
-                .sorted(Comparator.comparing(Expense::getAmount))
                 .collect(Collectors.toList());
     }
 
@@ -69,14 +69,66 @@ class HomeFinancesService {
                 getExpensesFromPeriod(start, end).stream()
                         .map(Expense::getAmount)
                         .collect(Collectors.toList());
-        double[] tab = expenses.toArray();
-        BigDecimal sum = new BigDecimal(0);
-        for (BigDecimal bd : expenses) {
-            sum = sum.add(bd);
+        if (expenses.isEmpty()) {
+            return ZERO;
+        } else {
+            return computeAverage(expenses);
         }
-        BigDecimal average = sum.divide(BigDecimal.valueOf(expenses.size()));
-        return average;
-
     }
 
+    Expense getBiggestExpenseFrom(Category category) throws NoExpenseInCategoryException {
+        List<Expense> maxExpense = getAllExpenses().stream()
+                .filter(expense -> expense.getCategory().equals(category))
+                .sorted(Comparator.comparing(Expense::getAmount).reversed())
+                .limit(1)
+                .collect(Collectors.toList());
+        if (!maxExpense.isEmpty()) {
+            return maxExpense.get(0);
+        } else {
+            throw new NoExpenseInCategoryException();
+        }
+    }
+
+    Map<Category, BigDecimal> getBiggestExpenseFromEachCategory() {
+        Map<Category, BigDecimal> biggestExpenses = new HashMap<>();
+        for (Category cat : Category.values()) {
+            List<BigDecimal> list = getExpensesFromCategory(cat).stream()
+                    .map(Expense::getAmount)
+                    .sorted(Comparator.reverseOrder())
+                    .limit(1)
+                    .collect(Collectors.toList());
+            if (list.isEmpty()) {
+                biggestExpenses.put(cat, ZERO);
+            } else {
+                biggestExpenses.put(cat, list.get(0));
+            }
+        }
+        return biggestExpenses;
+    }
+
+    Map<Category, BigDecimal> getAveragesByCategory() {
+        Map<Category, BigDecimal> averageExpenses = new HashMap<>();
+
+        for (Category cat : Category.values()) {
+            List<BigDecimal> list = getAllExpenses().stream()
+                    .filter(expense -> expense.getCategory().equals(cat))
+                    .map(Expense::getAmount)
+                    .collect(Collectors.toList());
+            if (list.isEmpty()) {
+                averageExpenses.put(cat, ZERO);
+            } else {
+                BigDecimal average = computeAverage(list);
+                averageExpenses.put(cat, average);
+            }
+        }
+        return averageExpenses;
+    }
+
+    private BigDecimal computeAverage(List<BigDecimal> list){
+        BigDecimal sum = ZERO;
+        for(BigDecimal bd : list){
+            sum = sum.add(bd);
+        }
+        return sum.divide(BigDecimal.valueOf(list.size()), 2, RoundingMode.HALF_UP);
+    }
 }
