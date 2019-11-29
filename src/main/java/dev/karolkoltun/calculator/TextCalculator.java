@@ -1,5 +1,13 @@
 package dev.karolkoltun.calculator;
 
+import org.apache.commons.lang3.math.NumberUtils;
+
+import java.text.DecimalFormat;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Stream;
+
 /** Proste, ryzykowne, lekko bledne i ograniczone podejscie do kalkulatora bazujacego na tekscie. */
 class TextCalculator {
 
@@ -11,16 +19,37 @@ class TextCalculator {
    * @return wynik
    */
   double calculate(String phrase) {
-    int firstNumber = Character.getNumericValue(phrase.charAt(0));
 
-    char symbol = phrase.charAt(1);
+    String phraseWithoutSpaces = phrase.replaceAll(" ", "");
+    int index = phraseWithoutSpaces.length();
 
-    if (symbol != '+') {
-      throw new RuntimeException("Symbol " + symbol + " is not supported!");
+    while (!isNumber(phraseWithoutSpaces.substring(0, index))) {
+      index--;
     }
 
-    int secondNumber = Character.getNumericValue(phrase.charAt(2));
+    String firstPhrase = phraseWithoutSpaces.substring(0, index);
+    String secondPhrase = phraseWithoutSpaces.substring(index + 1);
+    double firstNumber = Double.parseDouble(firstPhrase);
+    double secondNumber = Double.parseDouble(secondPhrase);
+    char symbol = phraseWithoutSpaces.charAt(index);
 
-    return firstNumber + secondNumber;
+    switch (symbol) {
+      case '+':
+        return firstNumber + secondNumber;
+      case '-':
+        return firstNumber - secondNumber;
+      case '*':
+        return firstNumber * secondNumber;
+      case '/':
+        return firstNumber / secondNumber;
+      default:
+        throw new RuntimeException("Symbol " + symbol + " is not supported!");
+    }
   }
+
+    boolean isNumber (String text){
+      return NumberUtils.isCreatable(text);
+    }
+
 }
+
