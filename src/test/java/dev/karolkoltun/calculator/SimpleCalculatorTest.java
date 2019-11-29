@@ -1,21 +1,18 @@
 package dev.karolkoltun.calculator;
 
-import dev.karolkoltun.DivisionByZeroException;
-import org.assertj.core.api.Assertions;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import dev.karolkoltun.exceptions.DivisionByZeroException;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvFileSource;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Stream;
 
+import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class SimpleCalculatorTest {
@@ -108,8 +105,6 @@ class SimpleCalculatorTest {
     assertFalse(simpleCalculator.isNumber(str));
   }
 
-
-
   @Test
   void shouldGetCorrectDivisors() {
     //Given
@@ -122,6 +117,17 @@ class SimpleCalculatorTest {
      //Then
     assertEquals(6, listOfDivisors.size());
     assertTrue(listOfDivisors.containsAll(Arrays.asList(1,2,3,4,6,12)));
+  }
+
+  @ParameterizedTest (name = "{0} with tax: {1} is : {2}")
+  @CsvSource({"2346,18,2768.28", "4112,20,4934.4", "1766,13,1995.58", "418,21,505.78"})
+  void shouldComputeGrossAmount(double x, double y, double result){
+    //When
+    BigDecimal actualAmount = simpleCalculator
+            .calculateGrossAmount(BigDecimal.valueOf(x), BigDecimal.valueOf(y));
+
+    //Then
+    assertThat(actualAmount).isEqualByComparingTo(BigDecimal.valueOf(result));
   }
 
 }

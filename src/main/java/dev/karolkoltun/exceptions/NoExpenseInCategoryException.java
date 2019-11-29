@@ -1,4 +1,4 @@
-package dev.karolkoltun.expenses;
+package dev.karolkoltun.exceptions;
 
 public class NoExpenseInCategoryException extends Exception{
 

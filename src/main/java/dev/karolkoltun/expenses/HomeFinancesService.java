@@ -1,8 +1,10 @@
 package dev.karolkoltun.expenses;
 
-import com.sun.source.tree.ArrayAccessTree;
+import dev.karolkoltun.account.AccountService;
+import dev.karolkoltun.account.BankAccount;
 import dev.karolkoltun.currency.CurrencyService;
-import org.apache.commons.lang3.builder.ToStringExclude;
+import dev.karolkoltun.exceptions.InvalidPayment;
+import dev.karolkoltun.exceptions.NoExpenseInCategoryException;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -22,22 +24,23 @@ class HomeFinancesService {
     private List<Expense> expenses = new ArrayList<>();
 
     private CurrencyService currencyService;
+    private AccountService accountService;
 
-    HomeFinancesService(CurrencyService currencyService) {
+    HomeFinancesService(CurrencyService currencyService, AccountService accountService) {
         this.currencyService = currencyService;
+        this.accountService = accountService;
     }
 
-    void addExpense(Expense expense) {
+    void addExpense(Expense expense) throws InvalidPayment {
+
+        accountService.verifyPayment(expense.getDate(), expense.getAmount());
+
         if (!expense.getCurrency().equals(PLN)) {
             BigDecimal amountInPln =
                     currencyService.convert(expense.getAmount(), expense.getCurrency(), PLN);
 
             expense.setAmount(amountInPln);
             expense.setCurrency(PLN);
-        }
-
-        if (expense.getDate().isAfter(now())) {
-            return;
         }
 
         if (expense.getAmount().compareTo(ZERO) < 0) {
@@ -124,9 +127,9 @@ class HomeFinancesService {
         return averageExpenses;
     }
 
-    private BigDecimal computeAverage(List<BigDecimal> list){
+    private BigDecimal computeAverage(List<BigDecimal> list) {
         BigDecimal sum = ZERO;
-        for(BigDecimal bd : list){
+        for (BigDecimal bd : list) {
             sum = sum.add(bd);
         }
         return sum.divide(BigDecimal.valueOf(list.size()), 2, RoundingMode.HALF_UP);

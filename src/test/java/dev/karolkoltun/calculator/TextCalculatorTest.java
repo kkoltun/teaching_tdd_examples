@@ -33,8 +33,8 @@ class TextCalculatorTest {
     static Stream<Arguments> provideInputForSubtracting(){
         return Stream.of(
                 Arguments.of("4-1", 3),
-                Arguments.of("74-26 ", 48),
-                Arguments.of("1 9-9", 10),
+                Arguments.of("-74-26 ", -100),
+                Arguments.of("19-9", 10),
                 Arguments.of("1  23-10", 113));
     }
 
@@ -42,7 +42,7 @@ class TextCalculatorTest {
         return Stream.of(
                 Arguments.of("4*4", 16),
                 Arguments.of(" 10.5*3", 31.5),
-                Arguments.of("12*12", 144),
+                Arguments.of("-12*12", -144),
                 Arguments.of("9*1 20", 1080));
     }
 

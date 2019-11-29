@@ -1,8 +1,10 @@
 package dev.karolkoltun.calculator;
 
-import dev.karolkoltun.DivisionByZeroException;
+import dev.karolkoltun.exceptions.DivisionByZeroException;
 import org.apache.commons.lang3.math.NumberUtils;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -46,7 +48,7 @@ class SimpleCalculator {
     return divisors;
   }
 
-  void addIfListDoesNotContains(List<Integer> list, int x){
+  private void addIfListDoesNotContains(List<Integer> list, int x){
     if(!list.contains(x)){
       list.add(x);
     }
@@ -57,5 +59,14 @@ class SimpleCalculator {
       return n;
     }
     return calculateFibonacci(n - 1) + calculateFibonacci(n - 2);
+  }
+
+  BigDecimal calculateGrossAmount(BigDecimal amount, BigDecimal percentage) {
+    final RoundingMode DEFAULT_ROUNDING = RoundingMode.HALF_EVEN;
+    final int SCALE = 2;
+    BigDecimal tax = amount
+            .multiply(percentage)
+            .divide(new BigDecimal("100"), 2, DEFAULT_ROUNDING);
+    return amount.add(tax);
   }
 }

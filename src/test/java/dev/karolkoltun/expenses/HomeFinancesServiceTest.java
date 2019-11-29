@@ -1,11 +1,16 @@
 package dev.karolkoltun.expenses;
 
+import dev.karolkoltun.account.AccountService;
+import dev.karolkoltun.account.PlainAccountService;
 import dev.karolkoltun.currency.Currency;
 import dev.karolkoltun.currency.CurrencyService;
 import dev.karolkoltun.currency.PlainCurrencyService;
+import dev.karolkoltun.exceptions.InvalidPayment;
+import dev.karolkoltun.exceptions.NoExpenseInCategoryException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
+import org.mockito.Mock;
 import org.mockito.Mockito;
 
 import java.math.BigDecimal;
@@ -23,15 +28,17 @@ class HomeFinancesServiceTest {
 
     private HomeFinancesService homeFinancesService;
     private PlainCurrencyService plainCurrencyService;
+    private PlainAccountService plainAccountService;
 
     @BeforeEach
-    void setup(){
+    void setup() {
         plainCurrencyService = new PlainCurrencyService();
-        homeFinancesService = new HomeFinancesService(plainCurrencyService);
+        plainAccountService = new PlainAccountService();
+        homeFinancesService = new HomeFinancesService(plainCurrencyService, plainAccountService);
     }
 
     @Test
-    void shouldAddExpenseInPLN(){
+    void shouldAddExpenseInPLN() throws InvalidPayment {
         //Given
         Expense expense = new Expense(LocalDate.now().minusDays(1), new BigDecimal(345), "CSK", OTHERS);
 
@@ -55,7 +62,7 @@ class HomeFinancesServiceTest {
     }
 
     @Test
-    void shouldntAddExpenseWithFutureDate(){
+    void shouldNotAddExpenseWithFutureDate() throws InvalidPayment {
         //Given
         Expense expense = new Expense(LocalDate.now().plusDays(3), new BigDecimal(120), "Rossmann", GIFTS);
 
@@ -68,7 +75,7 @@ class HomeFinancesServiceTest {
     }
 
     @Test
-    void shouldntAddExpenseWithNegativeAmount(){
+    void shouldNotAddExpenseWithNegativeAmount() throws InvalidPayment {
         //Given
         Expense expense = new Expense(LocalDate.now().minusDays(3), new BigDecimal(-45), "Rossmann", GIFTS);
 
@@ -81,12 +88,12 @@ class HomeFinancesServiceTest {
     }
 
     @Test
-    void shouldAddExpenseInForeignCurrency(){
+    void shouldAddExpenseInForeignCurrency() throws InvalidPayment {
         // Given
         CurrencyService currencyServiceMock =
                 Mockito.mock(CurrencyService.class);
         HomeFinancesService homeFinancesService =
-                new HomeFinancesService(currencyServiceMock);
+                new HomeFinancesService(currencyServiceMock, plainAccountService);
         Expense expenseInEuros = new Expense(
                 LocalDate.now().minusDays(2),
                 BigDecimal.valueOf(500),
@@ -115,7 +122,7 @@ class HomeFinancesServiceTest {
     }
 
     @Test
-    void shouldGetExpensesFromCategory(){
+    void shouldGetExpensesFromCategory() throws InvalidPayment {
         //Given
         Expense expense1 = new Expense(LocalDate.now().minusDays(3), new BigDecimal(50), "Rossmann", GIFTS);
         Expense expense2 = new Expense(LocalDate.now().minusDays(4), new BigDecimal(80), "Drogeria Rossmann", OTHERS);
@@ -138,7 +145,7 @@ class HomeFinancesServiceTest {
     }
 
     @Test
-    void shouldGiveEmptyList(){
+    void shouldGiveEmptyList() throws InvalidPayment {
         // Given
         Expense expense1 = new Expense(LocalDate.now().minusDays(3), new BigDecimal(50), "Rossmann", GIFTS);
         Expense expense2 = new Expense(LocalDate.now().minusDays(4), new BigDecimal(80), "Drogeria Rossmann", OTHERS);
@@ -154,7 +161,7 @@ class HomeFinancesServiceTest {
     }
 
     @Test
-    void shouldGetExpensesFormPeriod(){
+    void shouldGetExpensesFormPeriod() throws InvalidPayment {
         // Given
         Expense expense1 = new Expense(LocalDate.of(2019, 11, 13), BigDecimal.valueOf(45), "Empik", GIFTS);
         Expense expense2 = new Expense(LocalDate.of(2019, 11, 20), BigDecimal.valueOf(20), "KFC", FOOD);
@@ -173,7 +180,7 @@ class HomeFinancesServiceTest {
     }
 
     @Test
-    void shouldGetAverageExpenseInPeriod() {
+    void shouldGetAverageExpenseInPeriod() throws InvalidPayment {
         // Given
         Expense expense1 = new Expense(LocalDate.of(2019, 11, 13), BigDecimal.valueOf(45), "Empik", GIFTS);
         Expense expense2 = new Expense(LocalDate.of(2019, 11, 21), BigDecimal.valueOf(30), "KFC", FOOD);
@@ -189,12 +196,12 @@ class HomeFinancesServiceTest {
 
         // Then
         BigDecimal actualAverage = homeFinancesService.
-                getAverageExpenseInPeriod(LocalDate.of(2019,11,20), LocalDate.of(2019,11,25));
+                getAverageExpenseInPeriod(LocalDate.of(2019, 11, 20), LocalDate.of(2019, 11, 25));
         assertThat(actualAverage).isEqualByComparingTo(expectedAverage);
     }
 
     @Test
-    void shouldGet0AsAverageExpense(){
+    void shouldGet0AsAverageExpense() throws InvalidPayment {
         // Given
         Expense expense1 = new Expense(LocalDate.of(2019, 11, 21), BigDecimal.valueOf(30), "KFC", FOOD);
         Expense expense2 = new Expense(LocalDate.of(2019, 11, 22), BigDecimal.valueOf(50), "MC", FOOD);
@@ -211,7 +218,7 @@ class HomeFinancesServiceTest {
     }
 
     @Test
-    void shouldGetBiggestAmountFromCategory() throws NoExpenseInCategoryException{
+    void shouldGetBiggestAmountFromCategory() throws NoExpenseInCategoryException, InvalidPayment {
         // Given
         Expense expense1 = new Expense(LocalDate.now().minusDays(1), BigDecimal.valueOf(80), "CCC", OTHERS);
         Expense expense2 = new Expense(LocalDate.now().minusDays(1), BigDecimal.valueOf(40), "CCC", OTHERS);
@@ -223,14 +230,14 @@ class HomeFinancesServiceTest {
         homeFinancesService.addExpense(expense2);
         homeFinancesService.addExpense(expense3);
         homeFinancesService.addExpense(expense4);
+        Expense actualExpense = homeFinancesService.getBiggestExpenseFrom(OTHERS);
 
         // Then
-        Expense actualExpense = homeFinancesService.getBiggestExpenseFrom(OTHERS);
         assertEquals(expense3, actualExpense);
     }
 
     @Test
-    void shouldThrowNoExpenseException() throws NoExpenseInCategoryException {
+    void shouldThrowNoExpenseException() throws NoExpenseInCategoryException, InvalidPayment {
         // Given
         Expense expense1 = new Expense(LocalDate.now().minusDays(3), BigDecimal.valueOf(100), "Lidl", FOOD);
         Expense expense2 = new Expense(LocalDate.now().minusDays(3), BigDecimal.valueOf(130), "Lidl", OTHERS);
@@ -244,16 +251,16 @@ class HomeFinancesServiceTest {
     }
 
     @Test
-    void shouldGetTheBiggestExpenseFromEachCategory() throws NoExpenseInCategoryException {
+    void shouldGetTheBiggestExpenseFromEachCategory() throws NoExpenseInCategoryException, InvalidPayment {
         // Given
         List<Expense> expenses = List.of(
-        new Expense(LocalDate.now().minusDays(3), BigDecimal.valueOf(100), "Lidl", FOOD),
-        new Expense(LocalDate.now().minusDays(3), BigDecimal.valueOf(150), "Lidl", FOOD),
-        new Expense(LocalDate.now().minusDays(3), BigDecimal.valueOf(100), "BP", CARS),
-        new Expense(LocalDate.now().minusDays(3), BigDecimal.valueOf(150), "BP", CARS),
-        new Expense(LocalDate.now().minusDays(3), BigDecimal.valueOf(100), "Apart", GIFTS),
-        new Expense(LocalDate.now().minusDays(3), BigDecimal.valueOf(250), "Apart", GIFTS),
-        new Expense(LocalDate.now().minusDays(3), BigDecimal.valueOf(50), "Shop", OTHERS));
+                new Expense(LocalDate.now().minusDays(3), BigDecimal.valueOf(100), "Lidl", FOOD),
+                new Expense(LocalDate.now().minusDays(3), BigDecimal.valueOf(150), "Lidl", FOOD),
+                new Expense(LocalDate.now().minusDays(3), BigDecimal.valueOf(100), "BP", CARS),
+                new Expense(LocalDate.now().minusDays(3), BigDecimal.valueOf(150), "BP", CARS),
+                new Expense(LocalDate.now().minusDays(3), BigDecimal.valueOf(100), "Apart", GIFTS),
+                new Expense(LocalDate.now().minusDays(3), BigDecimal.valueOf(250), "Apart", GIFTS),
+                new Expense(LocalDate.now().minusDays(3), BigDecimal.valueOf(50), "Shop", OTHERS));
         Map<Category, BigDecimal> expectedMap = Map.of(
                 FOOD, BigDecimal.valueOf(150),
                 CARS, BigDecimal.valueOf(150),
@@ -261,12 +268,12 @@ class HomeFinancesServiceTest {
                 OTHERS, BigDecimal.valueOf(50));
 
         // When
-        for(Expense ex : expenses){
+        for (Expense ex : expenses) {
             homeFinancesService.addExpense(ex);
         }
+        Map<Category, BigDecimal> actualMap = homeFinancesService.getBiggestExpenseFromEachCategory();
 
         //Then
-        Map<Category, BigDecimal> actualMap = homeFinancesService.getBiggestExpenseFromEachCategory();
         assertEquals(expectedMap.size(), actualMap.size());
 
         for (Category cat : Category.values()) {
@@ -275,7 +282,7 @@ class HomeFinancesServiceTest {
     }
 
     @Test
-    void shouldGetZeroAmountForEachCategory(){
+    void shouldGetZeroAmountForEachCategory() {
         // Given
         Map<Category, BigDecimal> expectedMap = Map.of(
                 FOOD, BigDecimal.ZERO,
@@ -294,42 +301,29 @@ class HomeFinancesServiceTest {
     }
 
     @Test
-    void shouldGetAverageExpenseFromEachCategory() {
+    void shouldGetAverageExpenseFromEachCategory() throws InvalidPayment {
         List<Expense> expenses = List.of(
-        new Expense(LocalDate.now().minusDays(2), BigDecimal.valueOf(58), "Shop", FOOD),
-        new Expense(LocalDate.now().minusDays(2), BigDecimal.valueOf(40), "Shop", FOOD),
-        new Expense(LocalDate.now().minusDays(2), BigDecimal.valueOf(95), "BP", CARS),
-        new Expense(LocalDate.now().minusDays(2), BigDecimal.valueOf(68), "Bp", CARS),
-        new Expense(LocalDate.now().minusDays(2), BigDecimal.valueOf(100), "Bp", CARS),
-        new Expense(LocalDate.now().minusDays(2), BigDecimal.valueOf(35), "Shop", OTHERS));
+                new Expense(LocalDate.now().minusDays(2), BigDecimal.valueOf(58), "Shop", FOOD),
+                new Expense(LocalDate.now().minusDays(2), BigDecimal.valueOf(40), "Shop", FOOD),
+                new Expense(LocalDate.now().minusDays(2), BigDecimal.valueOf(95), "BP", CARS),
+                new Expense(LocalDate.now().minusDays(2), BigDecimal.valueOf(68), "Bp", CARS),
+                new Expense(LocalDate.now().minusDays(2), BigDecimal.valueOf(100), "Bp", CARS),
+                new Expense(LocalDate.now().minusDays(2), BigDecimal.valueOf(35), "Shop", OTHERS));
         Map<Category, BigDecimal> expectedMap = Map.of(
                 FOOD, BigDecimal.valueOf(49),
                 CARS, BigDecimal.valueOf(87.67),
                 OTHERS, BigDecimal.valueOf(35),
                 GIFTS, BigDecimal.ZERO);
 
-        for(Expense exp : expenses){
+        for (Expense exp : expenses) {
             homeFinancesService.addExpense(exp);
         }
 
         Map<Category, BigDecimal> actualMap = homeFinancesService.getAveragesByCategory();
 
         assertEquals(expectedMap.size(), actualMap.size());
-        for(Category cat : Category.values()){
+        for (Category cat : Category.values()) {
             assertThat(actualMap.get(cat)).isEqualByComparingTo(expectedMap.get(cat));
         }
     }
-
-    @Test
-    void whichExpense()throws NoExpenseInCategoryException{
-        Expense exp2 = new Expense(LocalDate.now().minusDays(4), BigDecimal.valueOf(58), "Shop", FOOD);
-        Expense exp1 = new Expense(LocalDate.now().minusDays(2), BigDecimal.valueOf(58), "Shop", FOOD);
-        homeFinancesService.addExpense(exp2);
-        homeFinancesService.addExpense(exp1);
-        Expense mistery = homeFinancesService.getBiggestExpenseFrom(FOOD);
-        System.out.println(exp1);
-        System.out.println(exp2);
-        System.out.println(mistery);
-    }
-
 }

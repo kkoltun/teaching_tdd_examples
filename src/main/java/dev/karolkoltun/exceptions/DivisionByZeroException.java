@@ -1,4 +1,4 @@
-package dev.karolkoltun;
+package dev.karolkoltun.exceptions;
 
 public class DivisionByZeroException extends Exception {
 
